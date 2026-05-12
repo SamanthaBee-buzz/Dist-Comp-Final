@@ -100,6 +100,7 @@ from datetime import date
 from datetime import time
 from datetime import timedelta
 import mlflow
+import databricks.sdk
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import catalog
 import io
@@ -107,13 +108,14 @@ import io
 #python -m streamlit run "c:/Users/katek/Desktop/NCF/Spring 2026/Dist Computing/Project 2/project2.py"
 
 w = WorkspaceClient(
-    host="https://dbc-75cc67cd-21ce.cloud.databricks.com",
-    token=""
+    host = "https://dbc-75cc67cd-21ce.cloud.databricks.com",
+    token = ""
 )
 
 df = w.files.download("/Volumes/compfinal/default/compfinal/RDC_Inventory_Core_Metrics_County_History.csv")
 
 hm = pd.read_csv(io.BytesIO(df.contents.read()))
+
 housemrkt = pd.DataFrame(hm)
 housemrkt['state'] = housemrkt.iloc[:, 2].str.split(', ').str[-1]
 
@@ -249,21 +251,32 @@ if pushdate == True:
       ypred = round(ypred[0])
       stlt.write(f"Your house will be on the market for approximately {ypred} days.")
 
-      mlflow.set_registry_uri("databricks-uc")
-      mlflow.set_experiment("/Users/s.baker24@ncf.edu/finalprojectexperiment")
-      with mlflow.start_run(run_name = "Boost"):
+#      mlflow.set_tracking_uri("databricks")
+#      mlflow.set_registry_uri("databricks-uc")
+#      mlflow.set_experiment("/Users/s.baker24@ncf.edu/ml_experiment")
 
-            xtrain = house_train.drop(columns = ['median_days_on_market', "month_date_yyyymm"])
-            ytrain = house_train['median_days_on_market']
+#      with mlflow.start_run(run_name="Boost"):
 
-            model = GBR(n_estimators = 20, learning_rate = 0.15, max_depth = 14, random_state = 100, max_features = 22)
+#            xtrain = house_train.drop(columns=['median_days_on_market', "month_date_yyyymm"])
+#            ytrain = house_train['median_days_on_market']
 
-            results = model.fit(xtrain, ytrain)
-                                    
-            ypred = results.predict(predictthis)
+#            model = GBR(
+#                  n_estimators=20,
+#                  learning_rate=0.15,
+#                  max_depth=14,
+#                  random_state=100,
+#                  max_features=22
+#            )
 
-            mlflow.log_metric("Predicted days", round(ypred[0]))
-            mlflow.log_metric('Max features', model.max_features)
-            mlflow.log_metric('Estimators', model.n_estimators)
-            mlflow.log_metric('Learning rate', model.learning_rate)
-            mlflow.log_metric('Max depth', model.max_depth)
+#            model.fit(xtrain, ytrain)
+
+#            ypred = model.predict(predictthis)
+
+#            mlflow.log_param("max_features", model.max_features)
+#            mlflow.log_param("n_estimators", model.n_estimators)
+#            mlflow.log_param("learning_rate", model.learning_rate)
+#            mlflow.log_param("max_depth", model.max_depth)
+
+#            mlflow.log_metric("predicted_days", float(ypred[0]))
+
+#            mlflow.sklearn.log_model(model, "model")
