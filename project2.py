@@ -100,10 +100,20 @@ from datetime import date
 from datetime import time
 from datetime import timedelta
 import mlflow
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import catalog
+import io
 
 #python -m streamlit run "c:/Users/katek/Desktop/NCF/Spring 2026/Dist Computing/Project 2/project2.py"
 
-hm = pd.read_csv("C:\\Users\\katek\\Desktop\\NCF\\Spring 2026\\Dist Computing\\Project 2\\RDC_Inventory_Core_Metrics_County_History.csv")
+w = WorkspaceClient(
+    host="https://dbc-75cc67cd-21ce.cloud.databricks.com",
+    token=""
+)
+
+df = w.files.download("/Volumes/compfinal/default/compfinal/RDC_Inventory_Core_Metrics_County_History.csv")
+
+hm = pd.read_csv(io.BytesIO(df.contents.read()))
 housemrkt = pd.DataFrame(hm)
 housemrkt['state'] = housemrkt.iloc[:, 2].str.split(', ').str[-1]
 
