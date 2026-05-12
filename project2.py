@@ -112,69 +112,13 @@ w = WorkspaceClient(
     token = ""
 )
 
-df = w.files.download("/Volumes/compfinal/default/compfinal/RDC_Inventory_Core_Metrics_County_History.csv")
+house_train = w.files.download("/Volumes/compfinal/default/compfinal/house_train.csv/part-00000-tid-6899596336054846361-567385bd-f712-4743-bc28-4416e52c99ca-263-1-c000.csv")
+htrn = pd.read_csv(io.BytesIO(house_train.contents.read()))
+house_train = pd.DataFrame(htrn)
 
-hm = pd.read_csv(io.BytesIO(df.contents.read()))
-
-housemrkt = pd.DataFrame(hm)
-housemrkt['state'] = housemrkt.iloc[:, 2].str.split(', ').str[-1]
-
-housemrkt_a = housemrkt.copy()
-ddrop = housemrkt_a[housemrkt_a["month_date_yyyymm"] < 201901].index
-housemrkt_a.drop(ddrop, inplace = True)
-ddrop2 = housemrkt_a[housemrkt_a["month_date_yyyymm"] > 202512].index
-housemrkt_a.drop(ddrop2, inplace = True)
-housemrkt_a['month_date_yyyymm'] = housemrkt_a['month_date_yyyymm'].astype(str)
-
-
-housemrkt_x = housemrkt_a.copy()
-housemrkt_x['month_date_yyyymm'] = housemrkt_a['month_date_yyyymm'].str[:-2] + '/' + housemrkt_a['month_date_yyyymm'].str[-2:] + '/01'
-housemrkt_x['month_date_yyyymm'] = pd.to_datetime(housemrkt_x['month_date_yyyymm'], format = '%Y/%m/%d')
-
-housemrkt_b = housemrkt_x.drop(columns = ['county_fips', 'county_name', 'quality_flag', 'pending_ratio', 'pending_ratio_mm', 'pending_ratio_yy', 'price_reduced_share', 'price_reduced_share_mm', 'price_reduced_share_yy', 'price_increased_share', 'price_increased_share_mm', 'price_increased_share_yy'])
-housemrkt_b = housemrkt_b.dropna()
-
-housemrkt_b['New England'] = 1
-housemrkt_b['Middle Atlantic'] = 1
-housemrkt_b['East North Central'] = 1
-housemrkt_b['West North Central'] = 1
-housemrkt_b['South Atlantic'] = 1
-housemrkt_b['East South Central'] = 1
-housemrkt_b['West South Central'] = 1
-housemrkt_b['Mountain'] = 1
-housemrkt_b['Pacific'] = 1
-
-neweng = ['ct', 'me', 'ma', 'nh', 'ri', 'vt']
-housemrkt_b.iloc[0:, 35] = housemrkt_b.iloc[0:, 35].where(housemrkt_b.iloc[0:, 34].isin(neweng))
-midatl = ['nj', 'ny', 'pa']
-housemrkt_b.iloc[0:, 36] = housemrkt_b.iloc[0:, 36].where(housemrkt_b.iloc[0:, 34].isin(midatl))
-eastnorth = ['il', 'in', 'mi', 'oh', 'wi']
-housemrkt_b.iloc[0:, 37] = housemrkt_b.iloc[0:, 37].where(housemrkt_b.iloc[0:, 34].isin(eastnorth))
-westnorth = ['ia', 'ks', 'mn', 'mo', 'ne', 'nd', 'sd']
-housemrkt_b.iloc[0:, 38] = housemrkt_b.iloc[0:, 38].where(housemrkt_b.iloc[0:, 34].isin(westnorth))
-southatl = ['de', 'fl', 'ga', 'md', 'nc', 'sc', 'va', 'wv']
-housemrkt_b.iloc[0:, 39] = housemrkt_b.iloc[0:, 39].where(housemrkt_b.iloc[0:, 34].isin(southatl))
-eastsouth = ['al', 'ky', 'ms', 'tn']
-housemrkt_b.iloc[0:, 40] = housemrkt_b.iloc[0:, 40].where(housemrkt_b.iloc[0:, 34].isin(eastsouth))
-westsouth = ['ar', 'la', 'ok', 'tx']
-housemrkt_b.iloc[0:, 41] = housemrkt_b.iloc[0:, 41].where(housemrkt_b.iloc[0:, 34].isin(westsouth))
-mtn = ['az', 'co', 'id', 'mt', 'nv', 'nm', 'ut', 'wy']
-housemrkt_b.iloc[0:, 42] = housemrkt_b.iloc[0:, 42].where(housemrkt_b.iloc[0:, 34].isin(mtn))
-pac = ['ak', 'ca', 'hi', 'or', 'wa']
-housemrkt_b.iloc[0:, 43] = housemrkt_b.iloc[0:, 43].where(housemrkt_b.iloc[0:, 34].isin(pac))
-housemrkt_b = housemrkt_b.fillna(0)
-st = ['ct', 'me', 'ma', 'nh', 'ri', 'vt', 'nj', 'ny', 'pa', 'il', 'in', 'mi', 'oh', 'wi', 'ia', 'ks', 'mn', 'mo', 'ne', 'nd', 'sd', 'de', 'fl', 'ga', 'md', 'nc', 'sc', 'va', 'wv', 'al', 'ky', 'ms', 'tn', 'ar', 'la', 'ok', 'tx', 'az', 'co', 'id', 'mt', 'nv', 'nm', 'ut', 'wy', 'ak', 'ca', 'hi', 'or', 'wa']
-housemrkt_b.iloc[0:, 34] = housemrkt_b.iloc[0:, 34].where(housemrkt_b.iloc[0:, 34].isin(st))
-housemrkt_b = housemrkt_b.dropna()
-
-housemrkt_c = housemrkt_b.drop(columns = ['state'])
-
-housemrkt_vif = housemrkt_c.drop(columns = ['total_listing_count', 'median_listing_price', 'new_listing_count', 'active_listing_count', 'average_listing_price'])
-
-house_train = housemrkt_vif.loc[(housemrkt_vif["month_date_yyyymm"] >= '2018-01-01') & (housemrkt_vif["month_date_yyyymm"] < '2025-01-01')]
-house_test = housemrkt_vif.loc[(housemrkt_vif["month_date_yyyymm"] >= '2025-01-01') & (housemrkt_vif["month_date_yyyymm"] < '2026-01-01')]
-
-housemrkt_vif = housemrkt_vif.drop(columns = ['median_days_on_market'])
+house_test = w.files.download("/Volumes/compfinal/default/compfinal/house_test.csv/part-00000-tid-6986609311974168513-9cb6b7d2-a77b-42b8-bd28-1600738c16b2-265-1-c000.csv")
+htst = pd.read_csv(io.BytesIO(house_test.contents.read()))
+house_train = pd.DataFrame(htst)
 
 predictthis = pd.DataFrame({'median_listing_price_mm':[0], 'median_listing_price_yy':[0], 'active_listing_count_mm':[0],
 'active_listing_count_yy':[0], 'median_days_on_market_mm':[0], 'median_days_on_market_yy':[0], 'new_listing_count_mm':[0],
