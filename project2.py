@@ -108,9 +108,11 @@ import io
 #python -m streamlit run "c:/Users/katek/Desktop/NCF/Spring 2026/Dist Computing/Project 2/project2.py"
 
 w = WorkspaceClient(
-    host="https://dbc-75cc67cd-21ce.cloud.databricks.com",
-    token=""
+    host = "",
+    token = ""
 )
+os.environ["DATABRICKS_HOST"] = ""
+os.environ["DATABRICKS_TOKEN"] = ""
 
 house_train = w.files.download("/Volumes/compfinal/default/compfinal/house_train.csv")
 house_train = pd.read_csv(io.BytesIO(house_train.contents.read()))
@@ -122,7 +124,7 @@ house_test = pd.DataFrame(house_test)
 house_test["month_date_yyyymm"] = pd.to_datetime(house_test["month_date_yyyymm"])
 
 predictthis = pd.DataFrame({'median_listing_price_mm':[0], 'median_listing_price_yy':[0], 'active_listing_count_mm':[0],
-'active_listing_count_yy':[0], 'median_days_on_market_mm':[0], 'median_days_on_market_yy':[0], 'new_listing_count_mm':[0],
+'active_listing_count_yy':[0], 'median_days_on_market':[0], 'median_days_on_market_mm':[0], 'median_days_on_market_yy':[0], 'new_listing_count_mm':[0],
 'new_listing_count_yy':[0], 'price_increased_count':[0], 'price_increased_count_mm':[0], 'price_increased_count_yy':[0],
 'price_reduced_count':[0], 'price_reduced_count_mm':[0], 'price_reduced_count_yy':[0], 'pending_listing_count':[0],
 'pending_listing_count_mm':[0], 'pending_listing_count_yy':[0], 'median_listing_price_per_square_foot':[0],
@@ -180,48 +182,60 @@ if pushdate == True:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["Pacific"] == 1)]
             predictthis["Pacific"] == 1
       hmpred = hmpred.drop(columns = ['month_date_yyyymm'])
-      print(hmpred)
-      for i in range(0, 26):
+      for i in range(0, 27):
             predictthis.iloc[0, i] = np.mean(hmpred.iloc[0:, i])
-      predictthis.iloc[0:, 17] = (price/sqft)
-      predictthis.iloc[0:, 20] = sqft
-      xtrain = house_train.drop(columns = ['median_days_on_market', "month_date_yyyymm"])
+      predictthis.iloc[0:, 18] = (price/sqft)
+      predictthis.iloc[0:, 21] = sqft
+      xtrain = house_train.drop(columns = ['median_days_on_market'])
+      x = ['median_listing_price_mm', 'median_listing_price_yy', 'active_listing_count_mm', 'active_listing_count_yy', 'median_days_on_market_mm', 'median_days_on_market_yy',  'new_listing_count_mm','new_listing_count_yy', 'price_increased_count', 'price_increased_count_mm', 'price_increased_count_yy','price_reduced_count', 'price_reduced_count_mm', 'price_reduced_count_yy', 'pending_listing_count', 'pending_listing_count_mm', 'pending_listing_count_yy', 'median_listing_price_per_square_foot','median_listing_price_per_square_foot_mm', 'median_listing_price_per_square_foot_yy', 'median_square_feet','median_square_feet_mm', 'median_square_feet_yy', 'average_listing_price_mm','average_listing_price_yy','total_listing_count_mm', 'total_listing_count_yy', 'New England', 'Middle Atlantic', 'East North Central','West North Central', 'South Atlantic', 'East South Central', 'West South Central', 'Mountain', 'Pacific']
+      design = MS(x)
+      xtrain = design.fit_transform(xtrain)
       ytrain = house_train['median_days_on_market']
-
+      ytrain = house_train['median_days_on_market']
       model = GBR(n_estimators = 20, learning_rate = 0.15, max_depth = 14, random_state = 100, max_features = 22)
 
       results = model.fit(xtrain, ytrain)
 
-      ypred = results.predict(predictthis)
-      ypred = round(ypred[0])
+      xtest = predictthis.drop(columns = ['median_days_on_market'])
+      xtest = design.fit_transform(xtest)
+      ytest = predictthis['median_days_on_market']
+      ypredtest = results.predict(xtest)
+      ypred = round(ypredtest[0])
       stlt.write(f"Your house will be on the market for approximately {ypred} days.")
 
-#      mlflow.set_tracking_uri("databricks")
-#      mlflow.set_registry_uri("databricks-uc")
-#      mlflow.set_experiment("/Users/s.baker24@ncf.edu/ml_experiment")
+      mlflow.set_tracking_uri("databricks")
+      mlflow.set_registry_uri("databricks-uc")
+      mlflow.set_experiment("/Users/s.baker24@ncf.edu/marketpredictions")
 
-#      with mlflow.start_run(run_name="Boost"):
+      with mlflow.start_run(run_name = "Market predictor"):
 
-#            xtrain = house_train.drop(columns=['median_days_on_market', "month_date_yyyymm"])
-#            ytrain = house_train['median_days_on_market']
+            xtrain = house_train.drop(columns = ['median_days_on_market'])
+            x = ['median_listing_price_mm', 'median_listing_price_yy', 'active_listing_count_mm', 'active_listing_count_yy', 'median_days_on_market_mm', 'median_days_on_market_yy',  'new_listing_count_mm','new_listing_count_yy', 'price_increased_count', 'price_increased_count_mm', 'price_increased_count_yy','price_reduced_count', 'price_reduced_count_mm', 'price_reduced_count_yy', 'pending_listing_count', 'pending_listing_count_mm', 'pending_listing_count_yy', 'median_listing_price_per_square_foot','median_listing_price_per_square_foot_mm', 'median_listing_price_per_square_foot_yy', 'median_square_feet','median_square_feet_mm', 'median_square_feet_yy', 'average_listing_price_mm','average_listing_price_yy','total_listing_count_mm', 'total_listing_count_yy', 'New England', 'Middle Atlantic', 'East North Central','West North Central', 'South Atlantic', 'East South Central', 'West South Central', 'Mountain', 'Pacific']
+            design = MS(x)
+            xtrain = design.fit_transform(xtrain)
+            ytrain = house_train['median_days_on_market']
+            ytrain = house_train['median_days_on_market']
 
-#            model = GBR(
-#                  n_estimators=20,
-#                  learning_rate=0.15,
-#                  max_depth=14,
-#                  random_state=100,
-#                  max_features=22
-#            )
+            model = GBR(n_estimators = 20, learning_rate = 0.15, max_depth = 14, random_state = 100, max_features = 22)
 
-#            model.fit(xtrain, ytrain)
+            results = model.fit(xtrain, ytrain)
+            
+            ypredtrain = results.predict(xtrain)
+            msetrain = np.mean((ytrain - ypredtrain)**2)
+            mlflow.log_metric("Training MSE", msetrain)
 
-#            ypred = model.predict(predictthis)
+            xtest = predictthis.drop(columns = ['median_days_on_market'])
+            xtest = design.fit_transform(xtest)
+            ytest = predictthis['median_days_on_market']
+            ypredtest = results.predict(xtest)
+            msetest = np.mean((ytest - ypredtest)**2)
+            mlflow.log_metric("Test MSE", msetest)
 
-#            mlflow.log_param("max_features", model.max_features)
-#            mlflow.log_param("n_estimators", model.n_estimators)
-#            mlflow.log_param("learning_rate", model.learning_rate)
-#            mlflow.log_param("max_depth", model.max_depth)
+            mlflow.log_metric('R2', r2_score(ytrain, ypredtrain))
 
-#            mlflow.log_metric("predicted_days", float(ypred[0]))
+            mlflow.log_metric('Max features', model.max_features)
+            mlflow.log_metric('Estimators', model.n_estimators)
+            mlflow.log_metric('Learning rate', model.learning_rate)
+            mlflow.log_metric('Max depth', model.max_depth)
 
-#            mlflow.sklearn.log_model(model, "model")
+            mlflow.sklearn.log_model(model, "Market predictor")
