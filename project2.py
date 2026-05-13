@@ -112,69 +112,14 @@ w = WorkspaceClient(
     token=""
 )
 
-df = w.files.download("/Volumes/compfinal/default/compfinal/RDC_Inventory_Core_Metrics_County_History.csv")
-
-hm = pd.read_csv(io.BytesIO(df.contents.read()))
-
-housemrkt = pd.DataFrame(hm)
-housemrkt['state'] = housemrkt.iloc[:, 2].str.split(', ').str[-1]
-
-housemrkt_a = housemrkt.copy()
-ddrop = housemrkt_a[housemrkt_a["month_date_yyyymm"] < 201901].index
-housemrkt_a.drop(ddrop, inplace = True)
-ddrop2 = housemrkt_a[housemrkt_a["month_date_yyyymm"] > 202512].index
-housemrkt_a.drop(ddrop2, inplace = True)
-housemrkt_a['month_date_yyyymm'] = housemrkt_a['month_date_yyyymm'].astype(str)
-
-
-housemrkt_x = housemrkt_a.copy()
-housemrkt_x['month_date_yyyymm'] = housemrkt_a['month_date_yyyymm'].str[:-2] + '/' + housemrkt_a['month_date_yyyymm'].str[-2:] + '/01'
-housemrkt_x['month_date_yyyymm'] = pd.to_datetime(housemrkt_x['month_date_yyyymm'], format = '%Y/%m/%d')
-
-housemrkt_b = housemrkt_x.drop(columns = ['county_fips', 'county_name', 'quality_flag', 'pending_ratio', 'pending_ratio_mm', 'pending_ratio_yy', 'price_reduced_share', 'price_reduced_share_mm', 'price_reduced_share_yy', 'price_increased_share', 'price_increased_share_mm', 'price_increased_share_yy'])
-housemrkt_b = housemrkt_b.dropna()
-
-housemrkt_b['New England'] = 1
-housemrkt_b['Middle Atlantic'] = 1
-housemrkt_b['East North Central'] = 1
-housemrkt_b['West North Central'] = 1
-housemrkt_b['South Atlantic'] = 1
-housemrkt_b['East South Central'] = 1
-housemrkt_b['West South Central'] = 1
-housemrkt_b['Mountain'] = 1
-housemrkt_b['Pacific'] = 1
-
-neweng = ['ct', 'me', 'ma', 'nh', 'ri', 'vt']
-housemrkt_b.iloc[0:, 35] = housemrkt_b.iloc[0:, 35].where(housemrkt_b.iloc[0:, 34].isin(neweng))
-midatl = ['nj', 'ny', 'pa']
-housemrkt_b.iloc[0:, 36] = housemrkt_b.iloc[0:, 36].where(housemrkt_b.iloc[0:, 34].isin(midatl))
-eastnorth = ['il', 'in', 'mi', 'oh', 'wi']
-housemrkt_b.iloc[0:, 37] = housemrkt_b.iloc[0:, 37].where(housemrkt_b.iloc[0:, 34].isin(eastnorth))
-westnorth = ['ia', 'ks', 'mn', 'mo', 'ne', 'nd', 'sd']
-housemrkt_b.iloc[0:, 38] = housemrkt_b.iloc[0:, 38].where(housemrkt_b.iloc[0:, 34].isin(westnorth))
-southatl = ['de', 'fl', 'ga', 'md', 'nc', 'sc', 'va', 'wv']
-housemrkt_b.iloc[0:, 39] = housemrkt_b.iloc[0:, 39].where(housemrkt_b.iloc[0:, 34].isin(southatl))
-eastsouth = ['al', 'ky', 'ms', 'tn']
-housemrkt_b.iloc[0:, 40] = housemrkt_b.iloc[0:, 40].where(housemrkt_b.iloc[0:, 34].isin(eastsouth))
-westsouth = ['ar', 'la', 'ok', 'tx']
-housemrkt_b.iloc[0:, 41] = housemrkt_b.iloc[0:, 41].where(housemrkt_b.iloc[0:, 34].isin(westsouth))
-mtn = ['az', 'co', 'id', 'mt', 'nv', 'nm', 'ut', 'wy']
-housemrkt_b.iloc[0:, 42] = housemrkt_b.iloc[0:, 42].where(housemrkt_b.iloc[0:, 34].isin(mtn))
-pac = ['ak', 'ca', 'hi', 'or', 'wa']
-housemrkt_b.iloc[0:, 43] = housemrkt_b.iloc[0:, 43].where(housemrkt_b.iloc[0:, 34].isin(pac))
-housemrkt_b = housemrkt_b.fillna(0)
-st = ['ct', 'me', 'ma', 'nh', 'ri', 'vt', 'nj', 'ny', 'pa', 'il', 'in', 'mi', 'oh', 'wi', 'ia', 'ks', 'mn', 'mo', 'ne', 'nd', 'sd', 'de', 'fl', 'ga', 'md', 'nc', 'sc', 'va', 'wv', 'al', 'ky', 'ms', 'tn', 'ar', 'la', 'ok', 'tx', 'az', 'co', 'id', 'mt', 'nv', 'nm', 'ut', 'wy', 'ak', 'ca', 'hi', 'or', 'wa']
-housemrkt_b.iloc[0:, 34] = housemrkt_b.iloc[0:, 34].where(housemrkt_b.iloc[0:, 34].isin(st))
-housemrkt_b = housemrkt_b.dropna()
-
-housemrkt_c = housemrkt_b.drop(columns = ['state'])
-
-housemrkt_vif = housemrkt_c.drop(columns = ['total_listing_count', 'median_listing_price', 'new_listing_count', 'active_listing_count', 'average_listing_price'])
-
-house_train = housemrkt_vif.loc[(housemrkt_vif["month_date_yyyymm"] >= '2018-01-01') & (housemrkt_vif["month_date_yyyymm"] < '2025-01-01')]
-house_test = housemrkt_vif.loc[(housemrkt_vif["month_date_yyyymm"] >= '2025-01-01') & (housemrkt_vif["month_date_yyyymm"] < '2026-01-01')]
-
-housemrkt_vif = housemrkt_vif.drop(columns = ['median_days_on_market'])
+house_train = w.files.download("/Volumes/compfinal/default/compfinal/house_train.csv")
+house_train = pd.read_csv(io.BytesIO(house_train.contents.read()))
+house_train = pd.DataFrame(house_train)
+house_train["month_date_yyyymm"] = pd.to_datetime(house_train["month_date_yyyymm"])
+house_test = w.files.download("/Volumes/compfinal/default/compfinal/house_test.csv")
+house_test = pd.read_csv(io.BytesIO(house_test.contents.read()))
+house_test = pd.DataFrame(house_test)
+house_test["month_date_yyyymm"] = pd.to_datetime(house_test["month_date_yyyymm"])
 
 predictthis = pd.DataFrame({'median_listing_price_mm':[0], 'median_listing_price_yy':[0], 'active_listing_count_mm':[0],
 'active_listing_count_yy':[0], 'median_days_on_market_mm':[0], 'median_days_on_market_yy':[0], 'new_listing_count_mm':[0],
@@ -205,41 +150,41 @@ state =  stlt.selectbox('What state is it in?:', ['Alabama', 'Alaska', 'Arizona'
 datee = stlt.slider("What month are you planning to list your house?", 1, 12, step = 1, key = f'dateselect')
 pushdate = stlt.button('Predict', key=f'pushdate')
 if pushdate == True:    
+      hmpred = house_test
       stlt.subheader("Calculating...")           
       if state in ['Connecticut', 'Maine', 'Massachusetts', 'New Hampshire', 'Rhode Island', 'Vermont']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["New England"] == 1)]
-            predictthis.iloc[0:,27] == 1
+            predictthis["New England"] == 1
       elif state in ['New Jersey', 'New York', 'Pennsylvania']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["Middle Atlantic"] == 1)]
-            predictthis.iloc[0:,28] == 1
+            predictthis["Middle Atlantic"] == 1
       elif state in ['Illinois', 'Indiana', 'Michigan', 'Ohio', 'Wisconsin']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["East North Central"] == 1)]
-            predictthis.iloc[0:,29] == 1
+            predictthis["East North Central"] == 1
       elif state in ['Iowa', 'Kansas', 'Minnesota', 'Missouri', 'Nebraska', 'North Dakota', 'South Dakota']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["West North Central"] == 1)]
-            predictthis.iloc[0:,30] == 1
+            predictthis["West North Central"] == 1
       elif state in ['Delaware', 'Florida', 'Georgia', 'Maryland', 'North Carolina', 'South Carolina', 'Virginia', 'West Virginia']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["South Atlantic"] == 1)]
-            predictthis.iloc[0:,31] == 1
+            predictthis["South Atlantic"] == 1
       elif state in ['Alabama', 'Kentucky', 'Mississippi', 'Tennessee']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["East South Central"] == 1)]
-            predictthis.iloc[0:,32] == 1
+            predictthis["East South Central"] == 1
       elif state in ['Arkansas', 'Louisiana', 'Oklahoma', 'Texas']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["West South Central"] == 1)]
-            predictthis.iloc[0:,33] == 1
+            predictthis['West South Central'] == 1
       elif state in ['Arizona', 'Colorado', 'Idaho', 'Montana', 'Nevada', 'New Mexico', 'Utah', 'Wyoming']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["Mountain"] == 1)]
-            predictthis.iloc[0:,34] == 1
+            predictthis["Mountain"] == 1
       elif state in ['Alaska', 'California', 'Hawaii', 'Oregon', 'Washington']:
             hmpred = house_test[(house_test["month_date_yyyymm"] == f'2025-{datee}-01') & (house_test["Pacific"] == 1)]
-            predictthis.iloc[0:,35] == 1
+            predictthis["Pacific"] == 1
       hmpred = hmpred.drop(columns = ['month_date_yyyymm'])
+      print(hmpred)
       for i in range(0, 26):
-            predictthis.iloc[0:, i] = np.mean(hmpred.iloc[0:, i])
-
+            predictthis.iloc[0, i] = np.mean(hmpred.iloc[0:, i])
       predictthis.iloc[0:, 17] = (price/sqft)
       predictthis.iloc[0:, 20] = sqft
-
       xtrain = house_train.drop(columns = ['median_days_on_market', "month_date_yyyymm"])
       ytrain = house_train['median_days_on_market']
 
