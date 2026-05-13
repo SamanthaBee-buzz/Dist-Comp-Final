@@ -110,8 +110,6 @@ import io
 w = WorkspaceClient(
     host="https://dbc-75cc67cd-21ce.cloud.databricks.com",
     token=""
-    host = "https://dbc-75cc67cd-21ce.cloud.databricks.com",
-    token = ""
 )
 
 df = w.files.download("/Volumes/compfinal/default/compfinal/RDC_Inventory_Core_Metrics_County_History.csv")
